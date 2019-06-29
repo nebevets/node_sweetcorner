@@ -5,15 +5,35 @@ const app = express();
 
 app.use(express.urlencoded({extended: false})); //for form url encoded data
 app.use(express.json()); // for raw json
+app.use('/auth/*', (req, res, next) => {
+  console.log('request info: ', req.baseUrl); // url for no middleware.
+  console.log('request query string: ', req.query);
+  console.log('request body', req.body);
+  next();
+});
 
-app.get('/', (req, res) => {
-  console.log('request received from: ', req.url);
+const withUser = (req, res, next) => {
+  // user came from db query
+  const user = {
+    id: 999,
+    name: 'steveben',
+    email: 'steveben@exmsft.com'
+  };
+  if(user){
+    req.user = user;
+    next();
+  }
+  else{
+    res.status(401).send('unauthorized');
+  }
+}
+
+app.get('/', withUser, (req, res) => {
+  const {user} = req;
+  console.log('user is: ', req.user);
   res.send({
     message: 'this is the root route',
-    user: {
-      name: 'billy jack',
-      email: 'jack@example.com'
-    }
+    user
   }).status(200);
 });
 
@@ -38,7 +58,7 @@ app.get('/extra-data', (req, res) => {
   }).status(200);
 });
 
-app.post('/sign-in', (req, res) => {
+app.post('/auth/sign-in', (req, res) => {
   const {body} = req;
   res.send({
     message: 'you are now signed in.',
@@ -46,7 +66,7 @@ app.post('/sign-in', (req, res) => {
   }).status(200);
 });
 
-app.patch('/update-user', (req, res) => {
+app.patch('/auth/update-user', (req, res) => {
   const {name, email} = req.body;
   res.send({
     message: `${name} updated`,
