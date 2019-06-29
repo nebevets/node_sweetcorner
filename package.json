@@ -1,0 +1,30 @@
+{
+  "name": "node_sweetcorner",
+  "version": "1.0.0",
+  "description": "a node version of sweetcorner api",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nebevets/node_sweetcorner.git"
+  },
+  "keywords": [
+    "node",
+    "api"
+  ],
+  "author": "steve benedict",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nebevets/node_sweetcorner/issues"
+  },
+  "homepage": "https://github.com/nebevets/node_sweetcorner#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  }
+}
