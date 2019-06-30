@@ -1,61 +1,83 @@
 const express = require('express');
+const mysql = require('mysql2/promise');
 const PORT = process.env.PORT || 9000;
-const path = require('path');
 const app = express();
+const { dbConfig } = require('./config');
+const bcrypt = require('bcrypt');
 
 app.use(express.urlencoded({extended: false})); //for form url encoded data
 app.use(express.json()); // for raw json
 
-app.get('/', (req, res) => {
-  console.log('request received from: ', req.url);
+const db = mysql.createPool(dbConfig);
+
+/* user model
+{
+  name: '',
+  email: '',
+  id: '',
+  password: '',
+  created_at: '',
+  updated_at: '',
+}
+*/
+
+app.get('/test', async (req, res) => {
+  const result = await db.query('SELECT * from users');
+  console.log('db result: ', result);
+  res.send('testing db');
+});
+
+app.post('/auth/sign-up', async (req, res) => {
+  const {name, email, password} = req.body;
+  const errors = [];
+  if(!name){
+    errors.push('you must provide a name.');
+  }
+  if(!email){
+    errors.push('you must provide an email.');
+  }
+  if(!password){
+    errors.push('you must provide a password.');
+  } else if(password.length < 6){
+    errors.push('password must be at least 6 characters.');
+  }
+  if(errors.length){
+    return res.status(422).send({
+      errors
+    });
+  }
+  const [[existingUser = null]] = await db.execute(
+    'SELECT id FROM users WHERE email = ?',
+    [email]
+  );
+
+  console.log('existing user: ', existingUser);
+  
+  if(existingUser){
+    return res.status(422).send({
+      error: 'email already in use'
+    });
+  }
+  
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  const [result] = await db.execute(
+    'INSERT INTO `users`(`name`, `email`, `password`, `created_at`, `updated_at`) VALUES (?,?,?,CURRENT_TIME,CURRENT_TIME)',
+    [name, email, hashedPassword]
+  );
+
+  console.log('insert result: ', result);
+
   res.send({
-    message: 'this is the root route',
+    message: 'account created successfully!',
     user: {
-      name: 'billy jack',
-      email: 'jack@example.com'
+      name, 
+      userId: result.insertId
     }
   }).status(200);
 });
 
-app.get('/article', (req, res) => {
-  res.send({
-    title: 'how to make endpoints with node',
-    content: 'so you like do a bunch of stuff like node or something and npm. then there is like this thing called postman to test. it good luck.',
-    author: {
-      name: 'otto parker',
-      email: 'ottop@example.com'
-    }
-  }).status(200);
-});
-
-app.get('/extra-data', (req, res) => {
-  const {name} = req.query; // this gets the query string
-  res.send({
-    message: 'get query data',
-    queryData: req.query,
-    moreData: 'here is some more data',
-    name
-  }).status(200);
-});
-
-app.post('/sign-in', (req, res) => {
-  const {body} = req;
-  res.send({
-    message: 'you are now signed in.',
-    postData: body
-  }).status(200);
-});
-
-app.patch('/update-user', (req, res) => {
-  const {name, email} = req.body;
-  res.send({
-    message: `${name} updated`,
-    postData: {
-      name,
-      email
-    }
-  }).status(200);
-});
 
 app.listen(PORT , () => {
   console.log(`server listening on localhost:${PORT}`);
