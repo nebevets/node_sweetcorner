@@ -78,6 +78,22 @@ app.post('/auth/sign-up', async (req, res) => {
   }).status(200);
 });
 
+app.post('/auth/sign-in', async (req, res) => {
+//check if we receieve an email and password
+//query db for user with matching email
+//use bcrypt to compare passwords
+//if everything matches, send back
+// res.send({
+//   message: 'sign-in success!',
+//   user: {
+//     name, 
+//     userId
+//   }
+// }).status(200);
+// if no email or password is 422
+// no email found in db is 401
+// passwords don't match 401
+});
 
 app.listen(PORT , () => {
   console.log(`server listening on localhost:${PORT}`);
