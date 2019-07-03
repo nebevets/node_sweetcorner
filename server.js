@@ -10,17 +10,6 @@ app.use(express.json()); // for raw json
 
 const db = mysql.createPool(dbConfig);
 
-/* user model
-{
-  name: '',
-  email: '',
-  id: '',
-  password: '',
-  created_at: '',
-  updated_at: '',
-}
-*/
-
 app.get('/test', async (req, res) => {
   const result = await db.query('SELECT * from users');
   console.log('db result: ', result);
@@ -50,8 +39,6 @@ app.post('/auth/sign-up', async (req, res) => {
     'SELECT id FROM users WHERE email = ?',
     [email]
   );
-
-  console.log('existing user: ', existingUser);
   
   if(existingUser){
     return res.status(422).send({
@@ -67,8 +54,6 @@ app.post('/auth/sign-up', async (req, res) => {
     [name, email, hashedPassword]
   );
 
-  console.log('insert result: ', result);
-
   res.send({
     message: 'account created successfully!',
     user: {
@@ -79,17 +64,46 @@ app.post('/auth/sign-up', async (req, res) => {
 });
 
 app.post('/auth/sign-in', async (req, res) => {
-//check if we receieve an email and password
-//query db for user with matching email
-//use bcrypt to compare passwords
-//if everything matches, send back
-// res.send({
-//   message: 'sign-in success!',
-//   user: {
-//     name, 
-//     userId
-//   }
-// }).status(200);
+  const {email, password} = req.body;
+  const errors = [];
+
+  if(!email){
+    errors.push('you must provide an email.');
+  }
+  if(!password){
+    errors.push('you must provide a password.');
+  }
+  if(errors.length){
+    return res.status(422).send({
+      errors
+    });
+  }
+  //query db for user with matching email
+  const [[user=null]] = await db.execute(
+    'SELECT id AS userId, name, password AS dbPassword FROM users WHERE email = ?',
+    [email]
+  );
+  if(user){
+    const {dbPassword, name, userId} = user;
+    const match = await bcrypt.compare(password, dbPassword);
+    if(match) {
+      res.send({
+          message: 'sign-in success!',
+          user: {
+            name, 
+            userId
+          }
+      }).status(200);
+    } else {
+      res.send({
+        message: 'sign-in error! email or password incorrect.'
+      }).status(401);
+    }
+  } else {
+    res.send({
+      message: 'sign-in error! email not found'
+    }).status(401);
+  }   
 // if no email or password is 422
 // no email found in db is 401
 // passwords don't match 401
