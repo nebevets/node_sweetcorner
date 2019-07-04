@@ -16,11 +16,14 @@ app.get('/test', async (req, res) => {
   res.send('testing db');
 });
 
-app.post('/auth/sign-up', async (req, res) => {
-  const {name, email, password} = req.body;
+app.post('/auth/create-account', async (req, res) => {
+  const {firstName, lastName, email, password} = req.body;
   const errors = [];
-  if(!name){
-    errors.push('you must provide a name.');
+  if(!firstName){
+    errors.push('you must provide a first name.');
+  }
+  if(!lastName){
+    errors.push('you must provide a last name.');
   }
   if(!email){
     errors.push('you must provide an email.');
@@ -48,18 +51,20 @@ app.post('/auth/sign-up', async (req, res) => {
   
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-
+  const [[role=null]] = await db.query('SELECT id FROM userRoles WHERE mid="customer"');
+  if(!role){
+    return res.status(500).send({error: 'internal server error'});
+  }
   const [result] = await db.execute(
-    'INSERT INTO `users`(`name`, `email`, `password`, `created_at`, `updated_at`) VALUES (?,?,?,CURRENT_TIME,CURRENT_TIME)',
-    [name, email, hashedPassword]
+    `INSERT INTO users(firstName, lastName, email, password, pid, roleId, createdAt, updatedAt, lastAccessedAt)
+     VALUES (?,?,?,?,UUID(),?,CURRENT_TIME(),CURRENT_TIME(), CURRENT_TIME())`,
+    [firstName, lastName, email, hashedPassword, role.id]
   );
 
+  const [[user]] = await db.query(`SELECT CONCAT(firstName, ' ', lastName) AS name, email, pid FROM users WHERE id=${result.insertId}`);
   res.send({
     message: 'account created successfully!',
-    user: {
-      name, 
-      userId: result.insertId
-    }
+    user
   }).status(200);
 });
 
@@ -80,18 +85,19 @@ app.post('/auth/sign-in', async (req, res) => {
   }
   //query db for user with matching email
   const [[user=null]] = await db.execute(
-    'SELECT id AS userId, name, password AS dbPassword FROM users WHERE email = ?',
+    `SELECT pid, CONCAT(firstName, ' ', lastName) AS name, password AS hash FROM users WHERE email = ?`,
     [email]
   );
   if(user){
-    const {dbPassword, name, userId} = user;
-    const match = await bcrypt.compare(password, dbPassword);
+    const {hash, name, pid} = user;
+    const match = await bcrypt.compare(password, hash);
     if(match) {
       res.send({
           message: 'sign-in success!',
           user: {
-            name, 
-            userId
+            name,
+            email,
+            pid
           }
       }).status(200);
     } else {
