@@ -18,11 +18,11 @@ app.get('/test', async (req, res) => {
 
 app.get('/api/products', async (req, res) => {
   const {protocol} = req;
-  const [result] = await db.query(`SELECT p.id AS productId, p.caption, p.cost, p.name, i.id AS imageId, i.altText, i.file, i.type  FROM products AS p JOIN images AS i ON p.thumbnailId=i.id`);
+  const [result] = await db.query(`SELECT p.pid, p.caption, p.cost, p.name, i.id AS imageId, i.altText, i.file, i.type  FROM products AS p JOIN images AS i ON p.thumbnailId=i.id`);
   const urlBase = `${protocol}://${req.get('host')}/images`;
   const products = result.map(product => {
     return {
-      id: product.productId,
+      id: product.pid,
       caption: product.caption,
       name: product.name,
       thumbnail: {
@@ -34,9 +34,15 @@ app.get('/api/products', async (req, res) => {
       }
     }
   });
-  res.send(
+  res.status(200).send(
     {products}
   );
+});
+
+app.get('/api/product:product_id', async (req, res) => {
+  //SELECT * FROM products AS p JOIN images AS im ON p.imageId=im.id JOIN images AS ti ON p.thumbnailId=ti.id WHERE p.pid="6f33d1ac-3750-4888-94b5-d4c5b520fc32"
+  const {product_id} = req.params;
+  res.send({product_id});
 });
 
 app.post('/auth/create-account', async (req, res) => {
