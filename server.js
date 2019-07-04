@@ -16,6 +16,29 @@ app.get('/test', async (req, res) => {
   res.send('testing db');
 });
 
+app.get('/api/products', async (req, res) => {
+  const {protocol} = req;
+  const [result] = await db.query(`SELECT p.id AS productId, p.caption, p.cost, p.name, i.id AS imageId, i.altText, i.file, i.type  FROM products AS p JOIN images AS i ON p.thumbnailId=i.id`);
+  const urlBase = `${protocol}://${req.get('host')}/images`;
+  const products = result.map(product => {
+    return {
+      id: product.productId,
+      caption: product.caption,
+      name: product.name,
+      thumbnail: {
+        id: product.imageId,
+        file: product.file,
+        altText: product.altText,
+        type: product.type,
+        url: `${urlBase}/${product.type}/${product.file}`
+      }
+    }
+  });
+  res.send(
+    {products}
+  );
+});
+
 app.post('/auth/create-account', async (req, res) => {
   const {firstName, lastName, email, password} = req.body;
   const errors = [];
@@ -117,4 +140,4 @@ app.post('/auth/sign-in', async (req, res) => {
 
 app.listen(PORT , () => {
   console.log(`server listening on localhost:${PORT}`);
-})
+});
