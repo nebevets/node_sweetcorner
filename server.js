@@ -10,6 +10,10 @@ app.use(express.json()); // for raw json
 
 const db = mysql.createPool(dbConfig);
 
+const imageUrl = (req, type, file) => {
+  return `${req.protocol}://${req.get('host')}/images/${type}/${file}`;
+};
+
 app.get('/test', async (req, res) => {
   const result = await db.query('SELECT * from users');
   console.log('db result: ', result);
@@ -17,9 +21,7 @@ app.get('/test', async (req, res) => {
 });
 
 app.get('/api/products', async (req, res) => {
-  const {protocol} = req;
   const [result] = await db.query(`SELECT p.pid, p.caption, p.cost, p.name, i.id AS imageId, i.altText, i.file, i.type  FROM products AS p JOIN images AS i ON p.thumbnailId=i.id`);
-  const urlBase = `${protocol}://${req.get('host')}/images`;
   const products = result.map(product => {
     return {
       id: product.pid,
@@ -30,7 +32,7 @@ app.get('/api/products', async (req, res) => {
         file: product.file,
         altText: product.altText,
         type: product.type,
-        url: `${urlBase}/${product.type}/${product.file}`
+        url: imageUrl(req, product.type, product.file)
       }
     }
   });
@@ -39,10 +41,61 @@ app.get('/api/products', async (req, res) => {
   );
 });
 
-app.get('/api/product:product_id', async (req, res) => {
-  //SELECT * FROM products AS p JOIN images AS im ON p.imageId=im.id JOIN images AS ti ON p.thumbnailId=ti.id WHERE p.pid="6f33d1ac-3750-4888-94b5-d4c5b520fc32"
+app.get('/api/product/:product_id', async (req, res) => {
   const {product_id} = req.params;
-  res.send({product_id});
+
+  if(!product_id){
+    return res.status(422).send('Missing product_id');
+  }
+  const [[product=null]] = await db.execute(
+    `SELECT
+        p.pid AS productId,
+        p.caption,
+        p.cost,
+        p.description,
+        p.name,
+        im.pid AS imageId,
+        im.altText AS imageAltText,
+        im.file AS imageFile,
+        im.type AS imageType,
+        tn.pid AS tnId,
+        tn.altText AS tnAltText,
+        tn.file AS tnFile,
+        tn.type AS tnType
+    FROM products AS p
+    JOIN images AS im
+      ON p.imageId=im.id
+    JOIN images AS tn
+      ON p.thumbnailId=tn.id
+    WHERE p.pid=?`,
+    [product_id]
+  );
+
+  if(!product){
+    return res.status(422).send('invalid product_id');
+  }
+  
+  res.send({
+    id: product.productId,
+    caption: product.caption,
+    cost: product.cost,
+    description: product.description,
+    name: product.name,
+    image: {
+      id: product.imageId,
+      alt: product.imageAltText,
+      file: product.imageFile,
+      type: product.imageType,
+      url: imageUrl(req, product.imageType, product.imageFile)
+    },
+    thumbnail: {
+      id: product.tnId,
+      alt: product.tnAltText,
+      file: product.tnFile,
+      type: product.tnType,
+      url: imageUrl(req, product.tnType, product.tnFile)
+    }
+  });
 });
 
 app.post('/auth/create-account', async (req, res) => {
@@ -112,7 +165,6 @@ app.post('/auth/sign-in', async (req, res) => {
       errors
     });
   }
-  //query db for user with matching email
   const [[user=null]] = await db.execute(
     `SELECT pid, CONCAT(firstName, ' ', lastName) AS name, password AS hash FROM users WHERE email = ?`,
     [email]
@@ -139,9 +191,6 @@ app.post('/auth/sign-in', async (req, res) => {
       message: 'sign-in error! email not found'
     }).status(401);
   }   
-// if no email or password is 422
-// no email found in db is 401
-// passwords don't match 401
 });
 
 app.listen(PORT , () => {
