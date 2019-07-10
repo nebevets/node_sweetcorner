@@ -1,5 +1,5 @@
-const db = require('../../../../db');
-const {imageUrl} = require('../../../../helpers');
+const db = require(__root + '/db');
+const {imageUrl} = require(__root + '/helpers');
 
 module.exports = async (req, res, next) => {
   try{
@@ -59,4 +59,4 @@ module.exports = async (req, res, next) => {
   } catch(err) {
     next(err);
   }
-}
+};
