@@ -47,18 +47,75 @@ module.exports = async (req, res, next) => {
       cartToken = jwt.encode(cartData, cartSecret);
     }
     const [[product = null]] = await db.execute(
-      `SELECT id FROM products WHERE pid = ?`,
+      `SELECT id, name FROM products WHERE pid = ? AND deletedAt IS NULL`,
       [product_id]
     );
     if(!product){
       throw new StatusError(400, 'Product not found. There seems to be a problem with the product id.');
     }
-    console.log('product id is: ', product);
+    const [[cart=null]] = await db.query(`SELECT * from carts WHERE id = ${cartData.cartId}`);
+
+    if(!cart){
+      throw new StatusError(422, "invalid cart id.");
+    }
+
+    const [[existingCartItem=null]] = await db.query(
+      `SELECT id, quantity FROM cartItems WHERE cartId=${cartData.cartId} AND productId=${product.id} AND deletedAt IS NULL`
+    );
+
+    if(existingCartItem){
+      let newQuantity = quantity + existingCartItem.quantity;
+      if(newQuantity < 0){
+        newQuantity = 0
+      }
+      const [updatedItem] = await db.query(
+        `UPDATE cartItems
+         SET quantity = ${newQuantity},
+          updatedAt=CURRENT_TIME
+          ${newQuantity ? '': ', deletedAt=CURRENT_TIME'}
+          WHERE id=${cartData.cartId} AND productId=${product.id}`
+      );
+
+      /// Select * from cartItems where cartId=? and productId And deleteAt IS Null
+    } else {
+      if(quantity < 1){
+        throw new StatusError(422, 'invalid quantity.');
+      }
+      const [cartItem] = await db.execute(
+        `INSERT INTO cartItems
+          (pid,
+            quantity,
+            createdAt,
+            updatedAt,
+            cartId,
+            productId)
+          VALUES 
+          (UUID(),
+            ?,
+            CURRENT_TIME,
+            CURRENT_TIME,
+            ?,
+            ?)`,
+          [quantity, cartData.cartId, product.id]
+      );
+    }
+
+    const message = `${quantity} ${product.name} cupcake${quantity > 1 ? 's' : ''} added to cart.`;
+
+    const [[total]] = await db.query(
+      `SELECT
+          SUM(ci.quantity) AS items,
+          SUM(ci.quantity*p.cost) AS total
+        FROM cartItems as ci
+        JOIN products as p
+        ON p.id=ci.productId
+        WHERE ci.cartId=${cartData.cartId} AND ci.deletedAt IS NULL`
+    );
     res.send({
-      message: 'item added to cart',
-      product_id,
-      quantity,
-      cartToken
+      cartId: cart.pid,
+      cartToken,
+      message,
+      total
     });
   } catch(err) {
     next(err);
