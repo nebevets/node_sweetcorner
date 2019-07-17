@@ -1,3 +1,4 @@
 module.exports = {
-  items: require('./items')
+  items: require('./items'),
+  getCart: require('./get-cart')
 };
