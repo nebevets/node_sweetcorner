@@ -1,4 +1,4 @@
 module.exports = {
-  getAll: require('./get_all'),
-  getOne: require('./get_one')
+  getAll: require('./get-all'),
+  getOne: require('./get-one')
 };

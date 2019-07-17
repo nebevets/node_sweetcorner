@@ -20,8 +20,10 @@ module.exports = async (req, res, next) => {
     if(cartToken){
       cartData = jwt.decode(cartToken, cartSecret);
     } else {
-      // create a cart
-      const [[cartStatus=null]] = await db.query(`SELECT id FROM cartStatuses WHERE mid="active"`);
+      const [[cartStatus=null]] = await db.query(
+        `SELECT id
+         FROM cartStatuses
+         WHERE mid="active"`);
       if(!cartStatus){
         throw new StatusError(500, 'Unable to determine cart status.');
       }
@@ -47,7 +49,10 @@ module.exports = async (req, res, next) => {
       cartToken = jwt.encode(cartData, cartSecret);
     }
     const [[product = null]] = await db.execute(
-      `SELECT id, name FROM products WHERE pid = ? AND deletedAt IS NULL`,
+      `SELECT id, name
+       FROM products
+       WHERE pid = ?
+       AND deletedAt IS NULL`,
       [product_id]
     );
     if(!product){
@@ -62,45 +67,47 @@ module.exports = async (req, res, next) => {
     const [[existingCartItem=null]] = await db.query(
       `SELECT id, quantity FROM cartItems WHERE cartId=${cartData.cartId} AND productId=${product.id} AND deletedAt IS NULL`
     );
-
     if(existingCartItem){
       let newQuantity = quantity + existingCartItem.quantity;
       if(newQuantity < 0){
-        newQuantity = 0
+        newQuantity = 0;
       }
       const [updatedItem] = await db.query(
         `UPDATE cartItems
-         SET quantity = ${newQuantity},
+         SET
+          quantity = ${newQuantity},
           updatedAt=CURRENT_TIME
           ${newQuantity ? '': ', deletedAt=CURRENT_TIME'}
-          WHERE id=${cartData.cartId} AND productId=${product.id}`
+         WHERE cartId=${cartData.cartId}
+         AND productId=${product.id}`
       );
-
-      /// Select * from cartItems where cartId=? and productId And deleteAt IS Null
     } else {
       if(quantity < 1){
-        throw new StatusError(422, 'invalid quantity.');
+        throw new StatusError(422, 'Invalid quantity.');
       }
       const [cartItem] = await db.execute(
-        `INSERT INTO cartItems
-          (pid,
-            quantity,
-            createdAt,
-            updatedAt,
-            cartId,
-            productId)
+        `INSERT
+          INTO cartItems
+            (pid,
+             quantity,
+             createdAt,
+             updatedAt,
+             cartId,
+             productId)
           VALUES 
-          (UUID(),
-            ?,
-            CURRENT_TIME,
-            CURRENT_TIME,
-            ?,
-            ?)`,
-          [quantity, cartData.cartId, product.id]
+            (UUID(),
+             ?,
+             CURRENT_TIME,
+             CURRENT_TIME,
+             ?,
+             ?)`,
+        [quantity, cartData.cartId, product.id]
       );
     }
 
     const message = `${quantity} ${product.name} cupcake${quantity > 1 ? 's' : ''} added to cart.`;
+
+    /* switch for message to say cupcake/cupcakes, added/removed */
 
     const [[total]] = await db.query(
       `SELECT
@@ -109,7 +116,8 @@ module.exports = async (req, res, next) => {
         FROM cartItems as ci
         JOIN products as p
         ON p.id=ci.productId
-        WHERE ci.cartId=${cartData.cartId} AND ci.deletedAt IS NULL`
+        WHERE ci.cartId=${cartData.cartId}
+        AND ci.deletedAt IS NULL`
     );
     res.send({
       cartId: cart.pid,
