@@ -7,7 +7,6 @@ const db = require(__root + '/db');
 module.exports = async (req, res, next) => {
   try{
     const {'x-cart-token': cartToken} = req.headers;
-    // console.log(req.headers);
     req.cart = null;
     if(cartToken){
       const cartData = jwt.decode(cartToken, cartSecret);
@@ -21,7 +20,8 @@ module.exports = async (req, res, next) => {
             c.userId,
             c.statusId AS cartStatusId,
             ci.quantity,
-            p.cost
+            p.cost,
+            p.id AS productId
           FROM carts as c
           JOIN cartItems as ci
           ON ci.cartId=c.id
@@ -33,10 +33,10 @@ module.exports = async (req, res, next) => {
       if(!cart){
         throw new StatusError(422, 'Invalid cart token.');
       }
-      const {cost, quantity, ...cartItem} = cart[0];
+      const {cost, quantity, productId, ...cartItem} = cart[0];
       const formattedCart = {
         ...cartItem,
-        items: cart.map(({cost, quantity}) => ({cost, quantity}))
+        items: cart.map(({productId: id, cost, quantity}) => ({id, cost, quantity}))
       };
       req.cart = formattedCart;
     }
