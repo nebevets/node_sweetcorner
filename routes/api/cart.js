@@ -5,7 +5,7 @@ const { items, getCart } = require('./controllers/cart');
   /api/cart routes
 */
 
-router.post('/items/:product_id', items.add);
+router.post('/items/:product_id', withCart, items.add);
 router.get('/', withCart, getCart);
 
 module.exports = router;
