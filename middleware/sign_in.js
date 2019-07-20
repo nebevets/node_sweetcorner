@@ -19,9 +19,9 @@ module.exports = async (req, res, next) => {
     const [[userData=null]] = await db.execute(
       `SELECT
         id,
+        CONCAT(firstName, ' ', lastName) AS name,
         pid,
         email,
-        CONCAT(firstName, ' ', lastName) AS name,
         password AS hash
        FROM users
        WHERE email = ?`,
