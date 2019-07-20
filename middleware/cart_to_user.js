@@ -3,7 +3,7 @@ const db = require(__root + '/db');
 module.exports = async (req, res, next) => {
   try{
     const {cart, user} = req;
-    if(cart.userId){
+    if(cart && cart.userId){
       if(cart.userId !== user.id){
         throw new StatusError(401, 'Cart does not belong to this user.');
       }

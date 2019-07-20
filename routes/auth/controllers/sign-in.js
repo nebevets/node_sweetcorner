@@ -1,11 +1,9 @@
-const bcrypt = require('bcrypt');
-const db = require(__root + '/db');
-
 module.exports = async (req, res, next) => {
   try{
+    const {id, token, ...user} = req.user;
     res.send({
-      message: 'testing sign in',
-      user: req.user
+      token,
+      user
     });
   } catch(err) {
       next(err);
