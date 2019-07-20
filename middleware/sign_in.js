@@ -16,32 +16,25 @@ module.exports = async (req, res, next) => {
     if(errors.length){
       throw new StatusError(422, errors);
     }
-    const [[user=null]] = await db.execute(
+    const [[userData=null]] = await db.execute(
       `SELECT
         id,
         pid,
+        email,
         CONCAT(firstName, ' ', lastName) AS name,
         password AS hash
        FROM users
        WHERE email = ?`,
       [email]
     );
-    if(user){
-      const {hash, name, pid} = user;
+    if(userData){
+      const {hash, ...user} = userData;
       const match = await bcrypt.compare(password, hash);
       if(match) {
         req.user = {
           token: createAuthToken(user.id),
           ...user
         }
-        // res.send({
-        //     message: 'sign-in success!',
-        //     user: {
-        //       name,
-        //       email,
-        //       pid
-        //     }
-        // }).status(200);
         next();
       } else {
         throw new StatusError(401, 'sign-in error! email or password incorrect.');

@@ -8,6 +8,6 @@ module.exports = async (req, res, next) => {
       user: req.user
     });
   } catch(err) {
-      next(err); // does all the app.use methods get called and in what order?
+      next(err);
   } 
 };
