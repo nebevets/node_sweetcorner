@@ -2,43 +2,58 @@ const jwt = require('jwt-simple');
 const {cartSecret} = require(__root + '/config').jwt;
 const db = require(__root + '/db');
 
-// how to we get the ip address
-
 module.exports = async (req, res, next) => {
   try{
+    const {user} = req;
     const {'x-cart-token': cartToken} = req.headers;
+    const [[cartStatus=null]] = await db.query(`SELECT id FROM cartStatuses WHERE mid="active"`);
     req.cart = null;
-    if(cartToken){
+
+    if(!cartStatus){
+      throw new StatusError(500, 'Error retrieving cart data.');
+    }
+
+    const cartQuery = 
+      `SELECT
+        c.id AS cartId,
+        c.lastInteraction,
+        c.pid,
+        c.createdAt,
+        c.updatedAt,
+        c.userId,
+        c.statusId AS cartStatusId,
+        ci.quantity,
+        p.cost,
+        p.id AS productId
+      FROM carts as c
+      JOIN cartItems as ci
+      ON ci.cartId=c.id
+      JOIN products as p
+      ON ci.productId=p.id
+      WHERE c.deletedAt is null
+      AND ci.deletedAt is null
+      AND c.statusId=${cartStatus.id} `;
+
+    let cartWhere = null;
+
+    if(user){
+      cartWhere = ` AND c.userId=${user.id}`;
+    }else if(cartToken){
       const cartData = jwt.decode(cartToken, cartSecret);
-      const [cart=null] = await db.query(
-        `SELECT
-            c.id AS cartId,
-            c.lastInteraction,
-            c.pid,
-            c.createdAt,
-            c.updatedAt,
-            c.userId,
-            c.statusId AS cartStatusId,
-            ci.quantity,
-            p.cost,
-            p.id AS productId
-          FROM carts as c
-          JOIN cartItems as ci
-          ON ci.cartId=c.id
-          JOIN products as p
-          ON ci.productId=p.id
-          WHERE c.id=${cartData.cartId} and c.deletedAt is null
-          AND ci.deletedAt is null`
-      );
-      if(!cart){
-        throw new StatusError(422, 'Invalid cart token.');
+      cartWhere = ` AND c.id=${cartData.cartId}`;
+    }
+    
+    if(cartWhere){
+      const [cart=null] = await db.query(cartQuery + cartWhere);
+      console.log(cart);
+      if(cart){
+        const {cost, quantity, productId, ...cartItem} = cart[0];
+        const formattedCart = {
+          ...cartItem,
+          items: cart.map(({productId: id, cost, quantity}) => ({id, cost, quantity}))
+        };
+        req.cart = formattedCart;
       }
-      const {cost, quantity, productId, ...cartItem} = cart[0];
-      const formattedCart = {
-        ...cartItem,
-        items: cart.map(({productId: id, cost, quantity}) => ({id, cost, quantity}))
-      };
-      req.cart = formattedCart;
     }
     next();
   } catch(error) {
