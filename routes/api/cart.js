@@ -6,7 +6,7 @@ const optionalAuth = require(__root + '/middleware/optional_auth');
 /*
   /api/cart routes
 */
-router.post('/items/:product_id', withCart, items.add);
+router.post('/items/:product_id', optionalAuth, withCart, items.add);
 router.get('/', optionalAuth, withCart, getCart);
 
 module.exports = router;

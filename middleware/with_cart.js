@@ -45,8 +45,7 @@ module.exports = async (req, res, next) => {
     
     if(cartWhere){
       const [cart=null] = await db.query(cartQuery + cartWhere);
-      console.log(cart);
-      if(cart){
+      if(cart && cart.length){
         const {cost, quantity, productId, ...cartItem} = cart[0];
         const formattedCart = {
           ...cartItem,
