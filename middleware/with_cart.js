@@ -39,6 +39,7 @@ module.exports = async (req, res, next) => {
     if(user){
       cartWhere = ` AND c.userId=${user.id}`;
     }else if(cartToken){
+      // if this decode fails, we throw an internal server error
       const cartData = jwt.decode(cartToken, cartSecret);
       cartWhere = ` AND c.id=${cartData.cartId}`;
     }
