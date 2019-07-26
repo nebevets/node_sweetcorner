@@ -5,11 +5,17 @@ module.exports = async (req, res, next) => {
     if(!req.cart){
       throw new StatusError(422, 'Cannot start a new order with an active cart.');
     }
+    const [[closedCartStatus=null]] = await db.query(
+      `SELECT id FROM cartStatuses WHERE mid="closed"`
+    );
+    if(!closedCartStatus){
+      throw new StatusError(500, 'Error determining a cart status.');
+    }
     const [[orderStatus=null]] = await db.query(
       `SELECT id FROM orderStatuses WHERE mid="pending"`
     );
     if(!orderStatus){
-      throw new StatusError(500, 'Error determining order status.');
+      throw new StatusError(500, 'Error determining a order status.');
     }
 
     let totalItems = 0;
@@ -45,13 +51,13 @@ module.exports = async (req, res, next) => {
       VALUES ${itemsQueryValues}`
     );
 
-    console.log(orderItems);
+    await db.query(
+      `UPDATE carts SET statusId=${closedCartStatus.id} WHERE ${req.cart.cartId}`
+    );
 
     res.send({
-      message: 'creating new order',
-      cart: req.cart,
-      totalCost,
-      totalItems
+      message: 'Order has been placed.',
+      id: orderId
     });
   } catch(error){
     next(error);
