@@ -9,6 +9,7 @@ module.exports = async (req, res, next) => {
         id: product.pid,
         caption: product.caption,
         name: product.name,
+        cost: product.cost,
         thumbnail: {
           id: product.imageId,
           file: product.file,

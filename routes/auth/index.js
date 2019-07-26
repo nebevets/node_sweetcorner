@@ -8,8 +8,8 @@ const cartToUser = require(__root + '/middleware/cart_to_user');
 /*
   /auth routes
 */
-router.post('/create-account', createAccount, withCart, cartToUser, controllers.createAccount);
-router.post('/sign-in', signIn, withCart, cartToUser, controllers.signIn);
+router.post('/create-account', withCart, createAccount, cartToUser, controllers.createAccount);
+router.post('/sign-in', withCart, signIn, cartToUser, controllers.signIn);
 router.get('/sign-in', withAuth, controllers.signIn);
 
 module.exports = router;

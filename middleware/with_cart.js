@@ -5,6 +5,7 @@ const db = require(__root + '/db');
 module.exports = async (req, res, next) => {
   try{
     const {user} = req;
+    console.log(req.headers);
     const {'x-cart-token': cartToken} = req.headers;
     const [[cartStatus=null]] = await db.query(`SELECT id FROM cartStatuses WHERE mid="active"`);
     req.cart = null;
@@ -45,9 +46,9 @@ module.exports = async (req, res, next) => {
     }
     
     if(cartWhere){
-      const [[cart=null]] = await db.query(cartQuery + cartWhere);
-      if(cart){
-        const {cost, quantity, productId, ...cartItem} = cart;
+      const [cart=null] = await db.query(cartQuery + cartWhere);
+      if(cart && cart.length){
+        const {cost, quantity, productId, ...cartItem} = cart[0];
         const formattedCart = {
           ...cartItem,
           items: cart.map(({productId: id, cost, quantity}) => ({id, cost, quantity}))
