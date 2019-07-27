@@ -54,8 +54,7 @@ module.exports = async (req, res, next) => {
       }
     }
     res.send({
-      message: 'get cart end point',
-      cart: cartDataToSend
+      ...cartDataToSend
     });
   }catch (error){
     next(error);
