@@ -2,11 +2,9 @@ import types from './types';
 import axios from 'axios';
 import { withHeaders } from '../helpers';
 
-const BASE_URL = 'http://localhost:9001';
-
 export const accountSignIn = user => async dispatch => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/auth/sign-in`, user, withHeaders());
+        const { data } = await axios.post(`/auth/sign-in`, user, withHeaders());
 
         localStorage.setItem('sc-auth-token', data.token);
         localStorage.removeItem('sc-cart-token');
@@ -30,7 +28,7 @@ export const accountSignOut = () => {
 
 export const addItemToCart = (productId, quantity) => async (dispatch) => {
     try {
-        const resp = await axios.post(`${BASE_URL}/api/cart/items/${productId}`, {
+        const resp = await axios.post(`/api/cart/items/${productId}`, {
             quantity: quantity
         }, withHeaders());
 
@@ -47,7 +45,7 @@ export const addItemToCart = (productId, quantity) => async (dispatch) => {
 
 export const userCartCheckout = () => async dispatch => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/api/orders`, null, withHeaders());
+        const { data } = await axios.post(`/api/orders`, null, withHeaders());
         // console.log('Checkout Data:', data);
 
         dispatch({
@@ -65,7 +63,7 @@ export const clearProductDetails = () => ({ type: types.CLEAR_PRODUCT_DETAILS })
 
 export const createAccount = user => async dispatch => {
     try {
-        const { data } = await axios.post(`${BASE_URL}/auth/create-account`, user, withHeaders());
+        const { data } = await axios.post(`/auth/create-account`, user, withHeaders());
         
         localStorage.setItem('sc-auth-token', data.token);
         localStorage.removeItem('sc-cart-token');
@@ -81,7 +79,7 @@ export const createAccount = user => async dispatch => {
 
 export const getActiveCart = () => async dispatch => {
     try {
-        const resp = await axios.get(`${BASE_URL}/api/cart`, withHeaders());
+        const resp = await axios.get(`/api/cart`, withHeaders());
 
         dispatch({
             type: types.GET_ACTIVE_CART,
@@ -94,7 +92,7 @@ export const getActiveCart = () => async dispatch => {
 
 export const getAllProducts = () => async dispatch => {
     try {
-        const resp = await axios.get(BASE_URL + '/api/products');
+        const resp = await axios.get('/api/products');
 
         dispatch({
             type: types.GET_ALL_PRODUCTS,
@@ -107,7 +105,7 @@ export const getAllProducts = () => async dispatch => {
 
 export const getCartTotals = () => async dispatch => {
     try {
-        const resp = await axios.get(`${BASE_URL}/api/cart/totals`, withHeaders());
+        const resp = await axios.get(`/api/cart/totals`, withHeaders());
 
         dispatch({
             type: types.GET_CART_TOTALS,
@@ -128,7 +126,7 @@ export const getCartTotals = () => async dispatch => {
 
 export const getOrderDetails = orderId => async dispatch => {
     try {
-        const { data } = await axios.get(`${BASE_URL}/api/orders/${orderId}`, withHeaders());
+        const { data } = await axios.get(`/api/orders/${orderId}`, withHeaders());
 
         dispatch({
             type: types.GET_ORDER_DETAILS,
@@ -141,7 +139,7 @@ export const getOrderDetails = orderId => async dispatch => {
 
 export const getProductDetails = productId => async dispatch => {
     try {
-        const resp = await axios.get(`${BASE_URL}/api/products/${productId}`);
+        const resp = await axios.get(`/api/products/${productId}`);
 
         dispatch({
             type: types.GET_PRODUCT_DETAILS,
@@ -158,7 +156,7 @@ export const jwtSignIn = () => async dispatch => {
             type: types.USER_TEMP_AUTH
         });
 
-        const { data } = await axios.get(`${BASE_URL}/auth/sign-in`, withHeaders());
+        const { data } = await axios.get(`/auth/sign-in`, withHeaders());
 
         dispatch({
             type: types.USER_JWT_SIGN_IN,

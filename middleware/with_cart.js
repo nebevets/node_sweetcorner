@@ -5,7 +5,6 @@ const db = require(__root + '/db');
 module.exports = async (req, res, next) => {
   try{
     const {user} = req;
-    console.log(req.headers);
     const {'x-cart-token': cartToken} = req.headers;
     const [[cartStatus=null]] = await db.query(`SELECT id FROM cartStatuses WHERE mid="active"`);
     req.cart = null;

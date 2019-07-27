@@ -3,6 +3,17 @@
   "version": "1.0.0",
   "description": "Completed React Sweet Corner project for part time module 3",
   "main": "index.js",
+  "proxy": {
+    "/api/*": {
+      "target": "http://localhost:9001"
+    },
+    "/auth/*": {
+      "target": "http://localhost:9001"
+    },
+    "/images/*": {
+      "target": "http://localhost:9001"
+    }
+  },
   "scripts": {
     "start": "node dev_server.js",
     "bundle": "webpack --config webpack.prod.js --progress",

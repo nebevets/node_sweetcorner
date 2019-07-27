@@ -16,7 +16,7 @@ module.exports = async (req, res, next) => {
       );
       if(cartStatus.id === cartStatusId){
         await db.query(
-          `UPDATE carts SET userId=${user.id} WHERE id=${cart.id}`
+          `UPDATE carts SET userId=${user.id} WHERE id=${cart.cartId}`
         );
       }
     }
