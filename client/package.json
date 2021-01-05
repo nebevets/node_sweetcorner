@@ -27,7 +27,7 @@
     "url": "https://github.com/scbowler/completed-react-sweet-corner.git"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "prop-types": "^15.7.2",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
